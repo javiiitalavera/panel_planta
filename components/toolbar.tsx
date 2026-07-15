@@ -13,15 +13,19 @@ import {
   X,
 } from "@/components/icons";
 
+export type GridColumns = 2 | 3;
+
 type ToolbarProps = {
   search: string;
   showingArchived: boolean;
   activeCount: number;
   archivedCount: number;
+  gridColumns: GridColumns;
   exportDisabled: boolean;
   backupDisabled: boolean;
   onSearchChange: (value: string) => void;
   onToggleArchived: () => void;
+  onGridColumnsChange: (value: GridColumns) => void;
   onNewPatient: () => void;
   onExportWord: () => void;
   onExportBackup: () => void;
@@ -33,10 +37,12 @@ export function Toolbar({
   showingArchived,
   activeCount,
   archivedCount,
+  gridColumns,
   exportDisabled,
   backupDisabled,
   onSearchChange,
   onToggleArchived,
+  onGridColumnsChange,
   onNewPatient,
   onExportWord,
   onExportBackup,
@@ -83,6 +89,31 @@ export function Toolbar({
           <Archive size={16} />
           {showingArchived ? `Activos (${activeCount})` : `Archivados (${archivedCount})`}
         </button>
+
+        <div
+          className="flex h-10 items-center rounded-xl border border-slate-200 bg-white p-1"
+          role="group"
+          aria-label="Número de columnas"
+          title="Número de columnas del panel"
+        >
+          <span className="hidden px-2 text-[12px] font-medium text-slate-500 xl:inline">Columnas</span>
+          {([2, 3] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={gridColumns === value}
+              aria-label={`Mostrar ${value} columnas`}
+              className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold transition ${
+                gridColumns === value
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              }`}
+              onClick={() => onGridColumnsChange(value)}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
 
         <button
           type="button"

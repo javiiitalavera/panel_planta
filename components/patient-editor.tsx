@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Patient, PatientDraft } from "@/lib/types";
 import { EMPTY_PATIENT_DRAFT } from "@/lib/constants";
 import { X } from "@/components/icons";
+import { RichTextField } from "@/components/rich-text-field";
 
 type PatientEditorProps = {
   patient: Patient | null;
@@ -12,36 +13,6 @@ type PatientEditorProps = {
   onClose: () => void;
   onSave: (draft: PatientDraft) => Promise<void>;
 };
-
-type TextAreaFieldProps = {
-  label: string;
-  value: string;
-  placeholder: string;
-  onChange: (value: string) => void;
-};
-
-function TextAreaField({
-  label,
-  value,
-  placeholder,
-  onChange,
-}: TextAreaFieldProps) {
-  const id = useId();
-
-  return (
-    <label htmlFor={id} className="block">
-      <span className="mb-1.5 block text-[12px] font-semibold text-slate-700">{label}</span>
-      <textarea
-        id={id}
-        value={value}
-        rows={3}
-        placeholder={placeholder}
-        className="custom-scrollbar min-h-[86px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-[14px] leading-5 text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-3 focus:ring-slate-100"
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
-  );
-}
 
 export function PatientEditor({
   patient,
@@ -184,31 +155,31 @@ export function PatientEditor({
             </div>
 
             <div className="mt-5 space-y-4">
-              <TextAreaField
+              <RichTextField
                 label="Ingreso"
                 value={draft.admissionReason}
                 placeholder="Motivos principales del ingreso."
                 onChange={(value) => setField("admissionReason", value)}
               />
-              <TextAreaField
+              <RichTextField
                 label="Antecedentes relevantes"
                 value={draft.relevantHistory}
                 placeholder="Solo aquello que conviene tener siempre presente."
                 onChange={(value) => setField("relevantHistory", value)}
               />
-              <TextAreaField
+              <RichTextField
                 label="Situación clínica"
                 value={draft.clinicalStatus}
                 placeholder="Problemas actuales: sueño, piel, tránsito, tensión, marcha, conducta…"
                 onChange={(value) => setField("clinicalStatus", value)}
               />
-              <TextAreaField
+              <RichTextField
                 label="Plan terapéutico"
                 value={draft.therapeuticPlan}
                 placeholder="Qué estás cambiando o vigilando en este momento."
                 onChange={(value) => setField("therapeuticPlan", value)}
               />
-              <TextAreaField
+              <RichTextField
                 label="Plan social"
                 value={draft.socialPlan}
                 placeholder="Con quién vive, destino al alta y recursos en gestión."

@@ -11,4 +11,4 @@ export const EMPTY_PATIENT_DRAFT: PatientDraft = {
   socialPlan: "",
 };
 
-export const APP_NAME = "Pase clínico";
+export const APP_NAME = "Pacientes Javi";

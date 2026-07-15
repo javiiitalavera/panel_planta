@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pase clínico",
+  title: "Pacientes Javi",
   description: "Panel local y privado para el seguimiento resumido de pacientes.",
   icons: {
     icon: "/app-icon.svg",

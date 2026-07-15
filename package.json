@@ -1,6 +1,6 @@
 {
-  "name": "panel-seguimiento-pacientes",
-  "version": "1.0.0",
+  "name": "pacientes-javi",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

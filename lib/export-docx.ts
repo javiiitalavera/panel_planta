@@ -11,11 +11,17 @@ import {
   TableLayoutType,
   TableRow,
   TextRun,
+  UnderlineType,
   VerticalAlign,
   WidthType,
 } from "docx";
 import type { Patient } from "@/lib/types";
 import { fileDate, formatAdmissionDays, formatDate, getAdmissionDays } from "@/lib/date";
+import {
+  colorToHexWithoutHash,
+  parseRichTextSegments,
+  richTextIsEmpty,
+} from "@/lib/rich-text";
 
 const COLORS = {
   ink: "1A2630",
@@ -43,8 +49,43 @@ const cardBorders = {
   insideVertical: { style: BorderStyle.NONE, size: 0, color: COLORS.surface },
 };
 
-function compactText(value: string): string {
-  return value.trim() || "—";
+type RunFormat = {
+  bold?: boolean;
+  underline?: boolean;
+  color?: string;
+};
+
+function textRun(text: string, format: RunFormat = {}): TextRun {
+  return new TextRun({
+    text,
+    bold: format.bold,
+    underline: format.underline ? { type: UnderlineType.SINGLE } : undefined,
+    size: 17,
+    color: format.color ?? COLORS.ink,
+  });
+}
+
+function richTextRuns(value: string): TextRun[] {
+  if (richTextIsEmpty(value)) return [textRun("—")];
+
+  const runs = parseRichTextSegments(value).map((segment) => {
+    if (segment.break) {
+      return new TextRun({
+        text: "",
+        break: 1,
+        size: 17,
+        color: COLORS.ink,
+      });
+    }
+
+    return textRun(segment.text ?? "", {
+      bold: segment.bold,
+      underline: segment.underline,
+      color: colorToHexWithoutHash(segment.color) ?? COLORS.ink,
+    });
+  });
+
+  return runs.length ? runs : [textRun("—")];
 }
 
 function sectionParagraph(title: string, value: string): Paragraph {
@@ -57,11 +98,7 @@ function sectionParagraph(title: string, value: string): Paragraph {
         size: 15,
         color: COLORS.muted,
       }),
-      new TextRun({
-        text: compactText(value),
-        size: 17,
-        color: COLORS.ink,
-      }),
+      ...richTextRuns(value),
     ],
   });
 }
@@ -72,7 +109,9 @@ function patientCard(patient: Patient): Table {
     patient.age !== null ? `${patient.age} años` : null,
     patient.admissionDate ? `Ingreso ${formatDate(patient.admissionDate)}` : null,
     days !== null ? formatAdmissionDays(days) : null,
-  ].filter(Boolean).join(" · ");
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -179,7 +218,7 @@ export async function exportPatientsToWord(patients: Patient[]): Promise<void> {
   }
 
   const document = new Document({
-    creator: "Pase clínico",
+    creator: "Pacientes Javi",
     title: `Resumen de pacientes ${formatDate(fileDate())}`,
     styles: {
       default: {
@@ -218,7 +257,7 @@ export async function exportPatientsToWord(patients: Patient[]): Promise<void> {
             spacing: { after: 80 },
             children: [
               new TextRun({
-                text: "Pase clínico",
+                text: "Pacientes Javi",
                 bold: true,
                 size: 30,
                 color: COLORS.ink,
@@ -247,5 +286,5 @@ export async function exportPatientsToWord(patients: Patient[]): Promise<void> {
   });
 
   const blob = await Packer.toBlob(document);
-  downloadBlob(blob, `pase-clinico-${fileDate()}.docx`);
+  downloadBlob(blob, `pacientes-javi-${fileDate()}.docx`);
 }

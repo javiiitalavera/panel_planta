@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Patient } from "@/lib/types";
 import { formatAdmissionDays, formatDate, getAdmissionDays } from "@/lib/date";
+import { richTextForEditor, richTextIsEmpty } from "@/lib/rich-text";
 import {
   Archive,
   ArchiveRestore,
@@ -168,9 +169,14 @@ export function PatientCard({
               <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.095em] text-slate-500">
                 {title}
               </h3>
-              <p className={`whitespace-pre-wrap text-[13px] leading-[1.42] ${patient[key] ? "text-slate-700" : "text-slate-300"}`}>
-                {patient[key] || "—"}
-              </p>
+              {richTextIsEmpty(patient[key]) ? (
+                <p className="text-[13px] leading-[1.42] text-slate-300">—</p>
+              ) : (
+                <div
+                  className="rich-text text-[13px] leading-[1.42] text-slate-700"
+                  dangerouslySetInnerHTML={{ __html: richTextForEditor(patient[key]) }}
+                />
+              )}
             </section>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { Patient, PatientDraft } from "@/lib/types";
+import { sanitizeRichText } from "@/lib/rich-text";
 
 class PatientDatabase extends Dexie {
   patients!: EntityTable<Patient, "id">;
@@ -20,11 +21,11 @@ function normalizeDraft(draft: PatientDraft): PatientDraft {
     identifier: draft.identifier.trim(),
     age: draft.age,
     admissionDate: draft.admissionDate,
-    admissionReason: draft.admissionReason.trim(),
-    relevantHistory: draft.relevantHistory.trim(),
-    clinicalStatus: draft.clinicalStatus.trim(),
-    therapeuticPlan: draft.therapeuticPlan.trim(),
-    socialPlan: draft.socialPlan.trim(),
+    admissionReason: sanitizeRichText(draft.admissionReason),
+    relevantHistory: sanitizeRichText(draft.relevantHistory),
+    clinicalStatus: sanitizeRichText(draft.clinicalStatus),
+    therapeuticPlan: sanitizeRichText(draft.therapeuticPlan),
+    socialPlan: sanitizeRichText(draft.socialPlan),
   };
 }
 

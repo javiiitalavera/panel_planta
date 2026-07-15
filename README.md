@@ -1,11 +1,12 @@
-# Pase clínico
+# Pacientes Javi
 
 Aplicación web local para mantener una vista resumida de los pacientes activos: ingreso, antecedentes relevantes, situación clínica, plan terapéutico y plan social.
 
 ## Características
 
-- Dos columnas de fichas compactas.
+- Vista configurable en dos o tres columnas.
 - Crear, editar, archivar, reactivar y eliminar pacientes.
+- Formato de texto en negrita, subrayado y color en los campos clínicos.
 - Orden manual mediante arrastrar y soltar.
 - Búsqueda por cualquier texto de la ficha.
 - Exportación de pacientes activos a Word (`.docx`).
@@ -52,7 +53,7 @@ Desde la carpeta del proyecto:
 ```bash
 git init
 git add .
-git commit -m "Primera versión de Pase clínico"
+git commit -m "Actualización de Pacientes Javi"
 git branch -M main
 git remote add origin URL_DEL_REPOSITORIO
 git push -u origin main

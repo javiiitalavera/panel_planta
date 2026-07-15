@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { BackupFile, Patient } from "@/lib/types";
 import { fileDate } from "@/lib/date";
+import { sanitizeRichText } from "@/lib/rich-text";
 
 const patientSchema = z.object({
   id: z.string().min(1),
@@ -46,7 +47,7 @@ export function exportBackup(patients: Patient[]): void {
     type: "application/json;charset=utf-8",
   });
 
-  downloadBlob(blob, `copia-pase-clinico-${fileDate()}.json`);
+  downloadBlob(blob, `copia-pacientes-javi-${fileDate()}.json`);
 }
 
 export async function parseBackup(file: File): Promise<Patient[]> {
@@ -57,6 +58,11 @@ export async function parseBackup(file: File): Promise<Patient[]> {
   return parsed.patients
     .map((patient, index) => ({
       ...patient,
+      admissionReason: sanitizeRichText(patient.admissionReason),
+      relevantHistory: sanitizeRichText(patient.relevantHistory),
+      clinicalStatus: sanitizeRichText(patient.clinicalStatus),
+      therapeuticPlan: sanitizeRichText(patient.therapeuticPlan),
+      socialPlan: sanitizeRichText(patient.socialPlan),
       order: Number.isFinite(patient.order) ? patient.order : index,
     }))
     .sort((a, b) => a.order - b.order);

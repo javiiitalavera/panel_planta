@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -31,8 +31,12 @@ import { exportBackup, parseBackup } from "@/lib/backup";
 import { exportPatientsToWord } from "@/lib/export-docx";
 import { PatientCard } from "@/components/patient-card";
 import { PatientEditor } from "@/components/patient-editor";
-import { Toolbar } from "@/components/toolbar";
+import { Toolbar, type GridColumns } from "@/components/toolbar";
 import { HardDrive, Plus, Search } from "@/components/icons";
+import { APP_NAME } from "@/lib/constants";
+import { richTextToPlainText } from "@/lib/rich-text";
+
+const GRID_COLUMNS_STORAGE_KEY = "pacientes-javi-grid-columns";
 
 type Notice = {
   tone: "success" | "error";
@@ -48,6 +52,20 @@ export function PatientDashboard() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [exportingWord, setExportingWord] = useState(false);
+  const [gridColumns, setGridColumns] = useState<GridColumns>(2);
+
+  useEffect(() => {
+    const storedValue = window.localStorage.getItem(GRID_COLUMNS_STORAGE_KEY);
+    if (storedValue !== "3") return;
+
+    const frame = window.requestAnimationFrame(() => setGridColumns(3));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const changeGridColumns = (value: GridColumns) => {
+    setGridColumns(value);
+    window.localStorage.setItem(GRID_COLUMNS_STORAGE_KEY, String(value));
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -72,11 +90,11 @@ export function PatientDashboard() {
     return currentPatients.filter((patient) =>
       [
         patient.identifier,
-        patient.admissionReason,
-        patient.relevantHistory,
-        patient.clinicalStatus,
-        patient.therapeuticPlan,
-        patient.socialPlan,
+        richTextToPlainText(patient.admissionReason),
+        richTextToPlainText(patient.relevantHistory),
+        richTextToPlainText(patient.clinicalStatus),
+        richTextToPlainText(patient.therapeuticPlan),
+        richTextToPlainText(patient.socialPlan),
       ].some((value) => value.toLocaleLowerCase("es").includes(normalizedSearch)),
     );
   }, [currentPatients, normalizedSearch]);
@@ -179,7 +197,7 @@ export function PatientDashboard() {
     } catch {
       showNotice({
         tone: "error",
-        text: "El archivo no es una copia válida de Pase clínico.",
+        text: `El archivo no es una copia válida de ${APP_NAME}.`,
       });
     }
   };
@@ -194,10 +212,10 @@ export function PatientDashboard() {
           <div>
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-                <span className="text-sm font-bold">P</span>
+                <span className="text-[11px] font-bold tracking-tight">PJ</span>
               </div>
               <div>
-                <h1 className="text-xl font-semibold tracking-[-0.025em] text-slate-950">Pase clínico</h1>
+                <h1 className="text-xl font-semibold tracking-[-0.025em] text-slate-950">{APP_NAME}</h1>
                 <p className="mt-0.5 text-[13px] text-slate-500">
                   Resumen operativo de pacientes
                 </p>
@@ -216,9 +234,11 @@ export function PatientDashboard() {
           showingArchived={showingArchived}
           activeCount={activePatients.length}
           archivedCount={archivedPatients.length}
+          gridColumns={gridColumns}
           exportDisabled={!activePatients.length || exportingWord}
           backupDisabled={!allPatients.length}
           onSearchChange={setSearch}
+          onGridColumnsChange={changeGridColumns}
           onToggleArchived={() => {
             setShowingArchived((value) => !value);
             setSearch("");
@@ -243,7 +263,7 @@ export function PatientDashboard() {
         </div>
 
         {loading ? (
-          <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className={`mt-2 grid grid-cols-1 gap-4 md:grid-cols-2 ${gridColumns === 3 ? "xl:grid-cols-3" : ""}`}>
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
@@ -261,7 +281,7 @@ export function PatientDashboard() {
               items={visiblePatients.map((patient) => patient.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="mt-2 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+              <div className={`mt-2 grid grid-cols-1 items-start gap-4 md:grid-cols-2 ${gridColumns === 3 ? "xl:grid-cols-3" : ""}`}>
                 {visiblePatients.map((patient) => (
                   <PatientCard
                     key={patient.id}
