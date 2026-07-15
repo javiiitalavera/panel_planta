@@ -3,7 +3,10 @@
 import { useRef, useState } from "react";
 import {
   Archive,
+  Check,
   ChevronDown,
+  Columns2,
+  Columns3,
   Download,
   FileDown,
   HardDrive,
@@ -32,6 +35,21 @@ type ToolbarProps = {
   onImportFile: (file: File) => void;
 };
 
+const viewOptions = [
+  {
+    value: 2 as const,
+    label: "Dos columnas",
+    description: "Fichas más amplias",
+    icon: Columns2,
+  },
+  {
+    value: 3 as const,
+    label: "Tres columnas",
+    description: "Más pacientes a la vista",
+    icon: Columns3,
+  },
+];
+
 export function Toolbar({
   search,
   showingArchived,
@@ -49,7 +67,14 @@ export function Toolbar({
   onImportFile,
 }: ToolbarProps) {
   const [backupOpen, setBackupOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const CurrentViewIcon = gridColumns === 3 ? Columns3 : Columns2;
+
+  const closeMenus = () => {
+    setBackupOpen(false);
+    setViewOpen(false);
+  };
 
   return (
     <div className="no-print flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.03)] lg:flex-row lg:items-center">
@@ -90,29 +115,73 @@ export function Toolbar({
           {showingArchived ? `Activos (${activeCount})` : `Archivados (${archivedCount})`}
         </button>
 
-        <div
-          className="flex h-10 items-center rounded-xl border border-slate-200 bg-white p-1"
-          role="group"
-          aria-label="Número de columnas"
-          title="Número de columnas del panel"
-        >
-          <span className="hidden px-2 text-[12px] font-medium text-slate-500 xl:inline">Columnas</span>
-          {([2, 3] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={gridColumns === value}
-              aria-label={`Mostrar ${value} columnas`}
-              className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold transition ${
-                gridColumns === value
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              }`}
-              onClick={() => onGridColumnsChange(value)}
-            >
-              {value}
-            </button>
-          ))}
+        <div className="relative">
+          <button
+            type="button"
+            aria-expanded={viewOpen}
+            aria-haspopup="menu"
+            className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition ${
+              viewOpen
+                ? "border-slate-300 bg-slate-100 text-slate-900"
+                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+            onClick={() => {
+              setBackupOpen(false);
+              setViewOpen((value) => !value);
+            }}
+          >
+            <CurrentViewIcon size={16} />
+            <span className="hidden sm:inline">Vista</span>
+            <ChevronDown size={14} className={`transition ${viewOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {viewOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="Cerrar menú de vista"
+                className="fixed inset-0 z-30 cursor-default"
+                onClick={closeMenus}
+              />
+              <div
+                role="menu"
+                className="absolute right-0 top-12 z-40 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10"
+              >
+                <div className="px-2.5 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  Distribución de fichas
+                </div>
+                {viewOptions.map((option) => {
+                  const OptionIcon = option.icon;
+                  const selected = gridColumns === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={selected}
+                      className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition ${
+                        selected ? "bg-slate-100" : "hover:bg-slate-50"
+                      }`}
+                      onClick={() => {
+                        onGridColumnsChange(option.value);
+                        setViewOpen(false);
+                      }}
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600">
+                        <OptionIcon size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-slate-800">{option.label}</span>
+                        <span className="mt-0.5 block text-[12px] text-slate-500">{option.description}</span>
+                      </span>
+                      {selected && <Check size={16} className="shrink-0 text-slate-700" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <button
@@ -130,7 +199,10 @@ export function Toolbar({
           <button
             type="button"
             className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            onClick={() => setBackupOpen((value) => !value)}
+            onClick={() => {
+              setViewOpen(false);
+              setBackupOpen((value) => !value);
+            }}
           >
             <HardDrive size={16} />
             Copia
@@ -143,7 +215,7 @@ export function Toolbar({
                 type="button"
                 aria-label="Cerrar menú de copia"
                 className="fixed inset-0 z-30 cursor-default"
-                onClick={() => setBackupOpen(false)}
+                onClick={closeMenus}
               />
               <div className="absolute right-0 top-12 z-40 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10">
                 <button

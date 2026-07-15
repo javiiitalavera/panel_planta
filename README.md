@@ -4,12 +4,13 @@ Aplicación web local para mantener una vista resumida de los pacientes activos:
 
 ## Características
 
-- Vista configurable en dos o tres columnas.
+- Vista configurable en dos o tres columnas desde un menú compacto.
 - Crear, editar, archivar, reactivar y eliminar pacientes.
 - Formato de texto en negrita, subrayado y color en los campos clínicos.
 - Orden manual mediante arrastrar y soltar.
 - Búsqueda por cualquier texto de la ficha.
 - Exportación de pacientes activos a Word (`.docx`).
+- Formato básico de texto (negrita, subrayado y una paleta breve de colores), conservado en Word.
 - Copia de seguridad e importación en JSON.
 - Almacenamiento exclusivamente local en IndexedDB.
 - Sin backend, usuarios, API ni base de datos remota.

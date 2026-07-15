@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import {
+  Bold,
+  Check,
+  Palette,
+  RemoveFormatting,
+  Underline,
+} from "@/components/icons";
 import { richTextForEditor, richTextIsEmpty } from "@/lib/rich-text";
 
 type RichTextFieldProps = {
@@ -10,7 +17,39 @@ type RichTextFieldProps = {
   onChange: (value: string) => void;
 };
 
+type FormatState = {
+  bold: boolean;
+  underline: boolean;
+  color: string;
+};
+
 const DEFAULT_TEXT_COLOR = "#334155";
+const TEXT_COLORS = [
+  { name: "Normal", value: DEFAULT_TEXT_COLOR },
+  { name: "Rojo", value: "#b42318" },
+  { name: "Ámbar", value: "#b54708" },
+  { name: "Verde", value: "#067647" },
+  { name: "Azul", value: "#175cd3" },
+  { name: "Morado", value: "#6941c6" },
+];
+
+const initialFormat: FormatState = {
+  bold: false,
+  underline: false,
+  color: DEFAULT_TEXT_COLOR,
+};
+
+function normalizeBrowserColor(value: string): string {
+  if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
+
+  const rgb = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (!rgb) return DEFAULT_TEXT_COLOR;
+
+  return `#${rgb
+    .slice(1, 4)
+    .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+    .join("")}`;
+}
 
 export function RichTextField({
   label,
@@ -21,8 +60,10 @@ export function RichTextField({
   const id = useId();
   const editorRef = useRef<HTMLDivElement>(null);
   const savedRangeRef = useRef<Range | null>(null);
-  const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
   const [empty, setEmpty] = useState(() => richTextIsEmpty(value));
+  const [focused, setFocused] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [format, setFormat] = useState<FormatState>(initialFormat);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -33,6 +74,28 @@ export function RichTextField({
     setEmpty(richTextIsEmpty(value));
   }, [value]);
 
+  const updateFormatState = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection?.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) return;
+
+    let color = DEFAULT_TEXT_COLOR;
+    try {
+      color = normalizeBrowserColor(document.queryCommandValue("foreColor") || DEFAULT_TEXT_COLOR);
+    } catch {
+      color = DEFAULT_TEXT_COLOR;
+    }
+
+    setFormat({
+      bold: document.queryCommandState("bold"),
+      underline: document.queryCommandState("underline"),
+      color,
+    });
+  };
+
   const saveSelection = () => {
     const editor = editorRef.current;
     const selection = window.getSelection();
@@ -41,6 +104,7 @@ export function RichTextField({
     const range = selection.getRangeAt(0);
     if (editor.contains(range.commonAncestorContainer)) {
       savedRangeRef.current = range.cloneRange();
+      updateFormatState();
     }
   };
 
@@ -64,11 +128,15 @@ export function RichTextField({
     saveSelection();
   };
 
-  const applyCommand = (command: "bold" | "underline" | "foreColor" | "removeFormat", commandValue?: string) => {
+  const applyCommand = (
+    command: "bold" | "underline" | "foreColor" | "removeFormat",
+    commandValue?: string,
+  ) => {
     restoreSelection();
     document.execCommand("styleWithCSS", false, "false");
     document.execCommand(command, false, commandValue);
     emitChange();
+    updateFormatState();
   };
 
   const pastePlainText = (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -83,61 +151,143 @@ export function RichTextField({
     emitChange();
   };
 
+  const toolbarButtonClass = (active = false) =>
+    `flex h-7 w-7 items-center justify-center rounded-md transition ${
+      active
+        ? "bg-slate-200 text-slate-900"
+        : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+    }`;
+
   return (
-    <div className="block">
-      <label htmlFor={id} className="mb-1.5 block text-[12px] font-semibold text-slate-700">
-        {label}
-      </label>
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white transition focus-within:border-slate-400 focus-within:ring-3 focus-within:ring-slate-100">
-        <div className="flex h-9 items-center gap-1 border-b border-slate-100 bg-slate-50/80 px-2" role="toolbar" aria-label={`Formato de ${label}`}>
+    <div
+      className="group/rich-field relative block"
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setFocused(false);
+        setColorOpen(false);
+      }}
+    >
+      <div className="mb-1.5 flex min-h-7 items-center justify-between gap-3">
+        <label htmlFor={id} className="block text-[12px] font-semibold text-slate-700">
+          {label}
+        </label>
+
+        <div
+          role="toolbar"
+          aria-label={`Formato de ${label}`}
+          className={`flex items-center gap-0.5 transition duration-150 ${
+            focused ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
           <button
             type="button"
             title="Negrita"
             aria-label="Negrita"
-            className="flex h-7 min-w-7 items-center justify-center rounded-md px-2 text-[13px] font-bold text-slate-600 hover:bg-white hover:text-slate-950"
+            aria-pressed={format.bold}
+            className={toolbarButtonClass(format.bold)}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => applyCommand("bold")}
           >
-            B
+            <Bold size={15} strokeWidth={2.2} />
           </button>
           <button
             type="button"
             title="Subrayado"
             aria-label="Subrayado"
-            className="flex h-7 min-w-7 items-center justify-center rounded-md px-2 text-[13px] font-semibold text-slate-600 underline decoration-1 underline-offset-2 hover:bg-white hover:text-slate-950"
+            aria-pressed={format.underline}
+            className={toolbarButtonClass(format.underline)}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => applyCommand("underline")}
           >
-            U
+            <Underline size={15} strokeWidth={2.2} />
           </button>
-          <div className="mx-1 h-5 w-px bg-slate-200" />
-          <label className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-slate-600 hover:bg-white hover:text-slate-950" title="Color de letra">
-            <span className="font-semibold">A</span>
-            <span className="h-2.5 w-5 rounded-full border border-black/10" style={{ backgroundColor: textColor }} />
-            <input
-              type="color"
-              value={textColor}
-              className="absolute h-0 w-0 opacity-0"
-              aria-label="Elegir color de letra"
-              onMouseDown={saveSelection}
-              onChange={(event) => {
-                const color = event.target.value;
-                setTextColor(color);
-                applyCommand("foreColor", color);
+
+          <div className="relative">
+            <button
+              type="button"
+              title="Color de letra"
+              aria-label="Color de letra"
+              aria-expanded={colorOpen}
+              className={toolbarButtonClass(colorOpen)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                saveSelection();
+                setColorOpen((value) => !value);
               }}
-            />
-          </label>
+            >
+              <span className="relative flex h-5 w-5 items-center justify-center">
+                <Palette size={15} strokeWidth={2} />
+                <span
+                  className="absolute bottom-0 h-0.5 w-4 rounded-full"
+                  style={{ backgroundColor: format.color }}
+                />
+              </span>
+            </button>
+
+            {colorOpen && (
+              <div className="absolute right-0 top-8 z-20 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10">
+                <div className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  Color de letra
+                </div>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {TEXT_COLORS.map((color) => {
+                    const selected = format.color.toLowerCase() === color.value.toLowerCase();
+                    return (
+                      <button
+                        key={color.value}
+                        type="button"
+                        title={color.name}
+                        aria-label={color.name}
+                        aria-pressed={selected}
+                        className="relative flex h-7 w-7 items-center justify-center rounded-lg hover:bg-slate-100"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          applyCommand("foreColor", color.value);
+                          setFormat((current) => ({ ...current, color: color.value }));
+                          setColorOpen(false);
+                        }}
+                      >
+                        <span
+                          className="h-4 w-4 rounded-full border border-black/10"
+                          style={{ backgroundColor: color.value }}
+                        />
+                        {selected && (
+                          <Check
+                            size={10}
+                            strokeWidth={3}
+                            className="absolute text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <span className="mx-1 h-4 w-px bg-slate-200" />
           <button
             type="button"
             title="Quitar formato"
-            className="ml-auto h-7 rounded-md px-2 text-[11px] font-medium text-slate-500 hover:bg-white hover:text-slate-800"
+            aria-label="Quitar formato"
+            className={toolbarButtonClass()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => applyCommand("removeFormat")}
           >
-            Normal
+            <RemoveFormatting size={15} strokeWidth={2} />
           </button>
         </div>
+      </div>
 
+      <div
+        className={`overflow-hidden rounded-xl border bg-white transition ${
+          focused
+            ? "border-slate-400 ring-3 ring-slate-100"
+            : "border-slate-200 hover:border-slate-300"
+        }`}
+      >
         <div
           ref={editorRef}
           id={id}
@@ -152,7 +302,10 @@ export function RichTextField({
           onInput={emitChange}
           onMouseUp={saveSelection}
           onKeyUp={saveSelection}
-          onFocus={saveSelection}
+          onFocus={() => {
+            setFocused(true);
+            saveSelection();
+          }}
           onBlur={saveSelection}
           onPaste={pastePlainText}
         />
