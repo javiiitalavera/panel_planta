@@ -298,7 +298,6 @@ export function RichTextField({
           data-placeholder={placeholder}
           data-empty={empty ? "true" : "false"}
           className="rich-editor custom-scrollbar min-h-[86px] max-h-[260px] overflow-y-auto px-3.5 py-3 text-[14px] leading-5 text-slate-800 outline-none"
-          dangerouslySetInnerHTML={{ __html: richTextForEditor(value) }}
           onInput={emitChange}
           onMouseUp={saveSelection}
           onKeyUp={saveSelection}
